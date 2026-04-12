@@ -1,0 +1,35 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Output of the Go build process
+*.out
+*.test
+*.log
+
+# Directories for build or temporary files
+bin/
+build/
+dist/
+coverage/
+temp/
+
+# Go test coverage files
+coverage.out
+*.coverprofile
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+*.swp
+
+# If you want to ignore vendor/ completely (assuming you use Go modules)
+vendor/
+
+# If you use an .env file or similar local config files
+.env
+.env.*
+node_modules
+credentials
