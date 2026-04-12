@@ -28,206 +28,96 @@
             width: 100vw;
         }
 
-        /* --- Left Sidebar (Presets) --- */
-        .sidebar {
-            width: 20%; /* 👈 CHANGED to 20% */
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-
-        /* --- Main Content (File Tree) --- */
-        .main-content {
-            width: 40%; /* 👈 CHANGED to 40% */
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        /* --- Right Sidebar (Selected Files) --- */
-        .right-sidebar {
-            width: 40%; /* 👈 CHANGED to 40% */
-            background-color: var(--sidebar-bg);
-            border-left: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
+        /* --- Layout --- */
+        .sidebar { width: 20%; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; }
+        .main-content { width: 40%; flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        .right-sidebar { width: 40%; background-color: var(--sidebar-bg); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; }
 
         .sidebar-header {
-            padding: 15px;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: bold;
-            border-bottom: 1px solid var(--border-color);
-            background-color: var(--sidebar-bg);
+            padding: 15px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;
+            border-bottom: 1px solid var(--border-color); background-color: var(--sidebar-bg);
+            display: flex; justify-content: space-between; align-items: center;
         }
 
-        .preset-list, .selected-list {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 10px;
+        .preset-list, .selected-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
+
+        /* --- Group & Drag/Drop Styles --- */
+        .group-container { margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; transition: border-color 0.2s;}
+        .group-container.drag-over { border-color: #4daafc; background-color: rgba(0, 122, 204, 0.1); border-style: dashed; }
+        
+        .group-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 10px; background-color: #2d2d2d; font-size: 13px; font-weight: bold;
         }
+        
+        .group-actions span { margin-left: 8px; cursor: pointer; color: #888; font-weight: normal;}
+        .group-actions span:hover { color: var(--text-highlight); }
+        .group-presets { padding: 4px; }
 
         .preset-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            cursor: pointer; /* 👈 Cursor applies to the whole row now */
-            border-radius: 4px;
-            font-size: 14px;
-            border-left: 3px solid transparent; 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 8px; cursor: grab; border-radius: 4px; font-size: 13px; border-left: 3px solid transparent; 
         }
-
+        .preset-item:active { cursor: grabbing; }
         .preset-item:hover { background-color: var(--hover-bg); }
         
-        .preset-item.active {
-            background-color: #004a77;
-            color: white;
-            border-left: 3px solid #4daafc;
-        }
+        .preset-item.active { background-color: #004a77; color: white; border-left: 3px solid #4daafc; }
         .preset-item.active:hover { background-color: #005a91; }
         .preset-item.active .preset-delete { color: #ff9999; }
 
-        .preset-delete { 
-            color: #f48771; 
-            cursor: pointer; 
-            font-weight: bold; 
-            padding-left: 10px; /* added a little padding so it's easier to click */
-        }
+        .preset-delete { color: #f48771; cursor: pointer; font-weight: bold; padding-left: 10px; }
 
+        .icon-btn { background: none; border: none; color: var(--text-color); cursor: pointer; font-size: 16px; display: flex; align-items: center; }
+        .icon-btn:hover { color: var(--text-highlight); }
+
+        /* --- Right Sidebar Items --- */
         .selected-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 6px 8px;
-            font-size: 13px;
-            border-bottom: 1px solid #333;
-            word-break: break-all;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 6px 8px; font-size: 13px; border-bottom: 1px solid #333; word-break: break-all;
         }
         .selected-item:hover { background-color: var(--hover-bg); }
         .selected-remove { color: #f48771; cursor: pointer; font-weight: bold; margin-left: 10px; padding: 0 4px; }
 
-        .panel-footer {
-            padding: 15px;
-            border-top: 1px solid var(--border-color);
-            background-color: var(--sidebar-bg);
-        }
-
-        .panel-footer input {
-            width: 100%;
-            padding: 6px;
-            margin-bottom: 8px;
-            box-sizing: border-box;
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            border-radius: 3px;
-        }
-
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .search-bar {
-            width: 100%;
-            max-width: 400px;
-            padding: 8px 12px;
-            background: var(--sidebar-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            border-radius: 4px;
-            outline: none;
-        }
-
+        .panel-footer { padding: 15px; border-top: 1px solid var(--border-color); background-color: var(--sidebar-bg); }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
+        .search-bar { width: 100%; max-width: 400px; padding: 8px 12px; background: var(--sidebar-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 4px; outline: none; }
         .search-bar:focus { border-color: var(--accent-color); }
 
-        .btn {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            width: 100%;
-        }
-
+        .btn { background-color: var(--accent-color); color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; }
         .btn:hover { background-color: #005f9e; }
         .btn:disabled { background-color: #555; cursor: not-allowed; }
 
         /* --- Tree View --- */
-        .tree-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 20px;
-            font-family: Consolas, "Courier New", monospace;
-            font-size: 14px;
-        }
-
+        .tree-container { flex-grow: 1; overflow-y: auto; padding: 20px; font-family: Consolas, "Courier New", monospace; font-size: 14px; }
         ul { list-style-type: none; padding-left: 20px; margin: 0; }
         li { margin: 4px 0; }
-        
-        .tree-node {
-            display: flex;
-            align-items: center;
-            padding: 4px;
-            border-radius: 3px;
-        }
-
+        .tree-node { display: flex; align-items: center; padding: 4px; border-radius: 3px; }
         .tree-node:hover { background-color: var(--hover-bg); }
-
-        .toggle-icon {
-            width: 16px;
-            text-align: center;
-            cursor: pointer;
-            display: inline-block;
-            user-select: none;
-            margin-right: 4px;
-            font-size: 12px;
-        }
-
+        .toggle-icon { width: 16px; text-align: center; cursor: pointer; display: inline-block; user-select: none; margin-right: 4px; font-size: 12px; }
         .folder-empty { width: 16px; display: inline-block; }
-
         input[type="checkbox"] { margin-right: 8px; cursor: pointer; }
-
         .file-label { cursor: pointer; user-select: none; color: var(--text-highlight); }
         .hidden { display: none !important; }
 
-        #status-message {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 14px;
-            color: #89d185;
-            text-align: center;
-            min-height: 20px;
-        }
+        #status-message { display: block; margin-bottom: 10px; font-size: 14px; color: #89d185; text-align: center; min-height: 20px; }
+        #auto-save-indicator { font-size: 12px; color: #888; font-style: italic; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="sidebar-header">Saved Presets</div>
-        <div class="preset-list" id="preset-list"></div>
-        <div class="panel-footer">
-            <input type="text" id="preset-name" placeholder="New Preset Name...">
-            <button class="btn" onclick="savePreset()">Save Selection</button>
+        <div class="sidebar-header">
+            <span>Saved Presets</span>
+            <button class="icon-btn" onclick="promptCreateGroup()" title="Create New Group">➕</button>
         </div>
+        <div class="preset-list" id="preset-list"></div>
     </div>
 
     <div class="main-content">
         <div class="top-bar">
             <input type="text" class="search-bar" id="search-input" placeholder="Search files (e.g. processor.go)..." onkeyup="filterTree()">
+            <span id="auto-save-indicator"></span>
         </div>
         <div class="tree-container" id="tree-container">
             Loading project files...
@@ -247,11 +137,14 @@
 
     <script>
         let fileData = null;
-        let currentPresets = {}; 
+        let currentPresets = {}; // Map of Group -> Preset -> Paths
         
-        let activePreset = null;
+        let activeGroupName = null;
+        let activePresetName = null;
         let isApplyingPreset = false;
+        let autoSaveTimer = null;
 
+        // --- Core Init ---
         async function loadTree() {
             try {
                 const response = await fetch('/api/tree');
@@ -262,9 +155,7 @@
                 const rootUl = document.createElement('ul');
                 rootUl.style.paddingLeft = '0';
                 if (fileData.children) {
-                    fileData.children.forEach(child => {
-                        rootUl.appendChild(createTreeNode(child));
-                    });
+                    fileData.children.forEach(child => rootUl.appendChild(createTreeNode(child)));
                 }
                 container.appendChild(rootUl);
                 
@@ -279,7 +170,6 @@
         function createTreeNode(node) {
             const li = document.createElement('li');
             li.dataset.name = node.name.toLowerCase();
-
             const nodeDiv = document.createElement('div');
             nodeDiv.className = 'tree-node';
 
@@ -319,21 +209,17 @@
             if (node.isDir && node.children) {
                 const ul = document.createElement('ul');
                 ul.classList.add('hidden'); 
-                node.children.forEach(child => {
-                    ul.appendChild(createTreeNode(child));
-                });
+                node.children.forEach(child => ul.appendChild(createTreeNode(child)));
                 li.appendChild(ul);
             }
 
             return li;
         }
 
+        // --- Checkbox & Selection Logic ---
         function handleCheck(checkbox, liNode) {
-            if (!isApplyingPreset && activePreset !== null) {
-                activePreset = null;
-                renderPresets();
-            }
-
+            // Note: We no longer clear the active preset! If they check a box while
+            // a preset is active, we just update the DOM and let auto-save catch it.
             const isChecked = checkbox.checked;
             const childCheckboxes = liNode.querySelectorAll('input[type="checkbox"]');
             childCheckboxes.forEach(cb => cb.checked = isChecked);
@@ -351,34 +237,40 @@
 
             if (selectedFiles.length === 0) {
                 list.innerHTML = '<div style="padding: 10px; color: #777; font-size: 13px; text-align: center;">No files selected</div>';
-                return;
+            } else {
+                selectedFiles.forEach(path => {
+                    const div = document.createElement('div');
+                    div.className = 'selected-item';
+                    
+                    const spanPath = document.createElement('span');
+                    spanPath.innerText = path;
+                    
+                    const spanDel = document.createElement('span');
+                    spanDel.className = 'selected-remove';
+                    spanDel.innerText = '×';
+                    spanDel.onclick = () => {
+                        const cb = document.querySelector(`input[data-path="${path}"]`);
+                        if(cb) {
+                            cb.checked = false;
+                            const liNode = cb.closest('li');
+                            handleCheck(cb, liNode); 
+                        }
+                    };
+
+                    div.appendChild(spanPath);
+                    div.appendChild(spanDel);
+                    list.appendChild(div);
+                });
             }
 
-            selectedFiles.forEach(path => {
-                const div = document.createElement('div');
-                div.className = 'selected-item';
-                
-                const spanPath = document.createElement('span');
-                spanPath.innerText = path;
-                
-                const spanDel = document.createElement('span');
-                spanDel.className = 'selected-remove';
-                spanDel.innerText = '×';
-                spanDel.onclick = () => {
-                    const cb = document.querySelector(`input[data-path="${path}"]`);
-                    if(cb) {
-                        cb.checked = false;
-                        const liNode = cb.closest('li');
-                        handleCheck(cb, liNode); 
-                    }
-                };
-
-                div.appendChild(spanPath);
-                div.appendChild(spanDel);
-                list.appendChild(div);
-            });
+            // AUTO-SAVE HOOK: If a preset is active and we aren't programmatic, update it silently.
+            if (!isApplyingPreset && activeGroupName && activePresetName) {
+                currentPresets[activeGroupName][activePresetName] = selectedFiles;
+                triggerAutoSave();
+            }
         }
 
+        // --- Tree Search Filter ---
         function filterTree() {
             const query = document.getElementById('search-input').value.toLowerCase();
             const rootUl = document.querySelector('#tree-container > ul');
@@ -389,7 +281,6 @@
         function filterNode(ul, query) {
             let hasVisibleChild = false;
             const items = ul.children;
-            
             for (let i = 0; i < items.length; i++) {
                 const li = items[i];
                 const name = li.dataset.name;
@@ -414,6 +305,7 @@
             return hasVisibleChild;
         }
 
+        // --- Preset API & Auto-Save ---
         async function fetchPresets() {
             try {
                 const res = await fetch('/api/presets');
@@ -421,9 +313,19 @@
                     currentPresets = await res.json() || {};
                     renderPresets();
                 }
-            } catch (err) {
-                console.error("Failed to fetch presets:", err);
-            }
+            } catch (err) { console.error("Failed to fetch presets:", err); }
+        }
+
+        function triggerAutoSave() {
+            const indicator = document.getElementById('auto-save-indicator');
+            indicator.innerText = "Saving...";
+            
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(async () => {
+                await savePresetsToServer();
+                indicator.innerText = "Saved";
+                setTimeout(() => { if(indicator.innerText === "Saved") indicator.innerText = ""; }, 2000);
+            }, 500); // 500ms debounce
         }
 
         async function savePresetsToServer() {
@@ -435,73 +337,216 @@
                 });
                 if (!res.ok) throw new Error("Failed to save to server");
             } catch (err) {
-                alert("Could not save preset to .context-presets.yaml");
                 console.error(err);
             }
         }
 
+        // --- Drag & Drop Mechanics ---
+        function handleDragOver(e, groupDiv) {
+            e.preventDefault(); // Necessary to allow dropping
+            groupDiv.classList.add('drag-over');
+        }
+
+        function handleDragLeave(groupDiv) {
+            groupDiv.classList.remove('drag-over');
+        }
+
+        async function handleDrop(e, targetGroupName, groupDiv) {
+            e.preventDefault();
+            groupDiv.classList.remove('drag-over');
+
+            try {
+                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                const { group: sourceGroup, preset: presetName } = data;
+
+                if (sourceGroup !== targetGroupName) {
+                    // Move the preset in memory
+                    const paths = currentPresets[sourceGroup][presetName];
+                    delete currentPresets[sourceGroup][presetName];
+                    
+                    if (!currentPresets[targetGroupName]) {
+                        currentPresets[targetGroupName] = {};
+                    }
+                    currentPresets[targetGroupName][presetName] = paths;
+
+                    // Keep active state synced if the moved preset was currently open
+                    if (activeGroupName === sourceGroup && activePresetName === presetName) {
+                        activeGroupName = targetGroupName;
+                    }
+
+                    await savePresetsToServer();
+                    renderPresets();
+                }
+            } catch (err) {
+                console.error("Drop failed", err);
+            }
+        }
+
+        // --- Rendering & Group Actions ---
         function renderPresets() {
             const list = document.getElementById('preset-list');
             list.innerHTML = '';
             
-            for (const [name, paths] of Object.entries(currentPresets)) {
-                const div = document.createElement('div');
-                div.className = 'preset-item' + (activePreset === name ? ' active' : '');
+            for (const [groupName, presets] of Object.entries(currentPresets)) {
+                // Group Container setup
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group-container';
                 
-                // 👈 CHANGED: Moved onclick from span to the whole div
-                div.onclick = () => {
-                    activePreset = name; 
-                    applyPreset(paths);
-                    renderPresets(); 
-                };
+                // DnD listeners
+                groupDiv.ondragover = (e) => handleDragOver(e, groupDiv);
+                groupDiv.ondragenter = (e) => handleDragOver(e, groupDiv);
+                groupDiv.ondragleave = () => handleDragLeave(groupDiv);
+                groupDiv.ondrop = (e) => handleDrop(e, groupName, groupDiv);
+
+                // Group Header
+                const header = document.createElement('div');
+                header.className = 'group-header';
                 
                 const titleSpan = document.createElement('span');
-                titleSpan.innerText = name;
+                titleSpan.innerText = `📁 ${groupName}`;
                 
-                const delSpan = document.createElement('span');
-                delSpan.className = 'preset-delete';
-                delSpan.innerText = '×';
-                delSpan.onclick = async (e) => {
-                    e.stopPropagation(); // 👈 Ensures the div's onclick above doesn't fire
-                    delete currentPresets[name];
-                    if (activePreset === name) activePreset = null;
-                    await savePresetsToServer();
-                    renderPresets();
-                };
+                const actions = document.createElement('div');
+                actions.className = 'group-actions';
+                
+                const btnAdd = document.createElement('span');
+                btnAdd.innerText = '➕';
+                btnAdd.title = 'Add preset from selection';
+                btnAdd.onclick = (e) => { e.stopPropagation(); promptCreatePreset(groupName); };
+                
+                const btnRename = document.createElement('span');
+                btnRename.innerText = '✏️';
+                btnRename.title = 'Rename Group';
+                btnRename.onclick = (e) => { e.stopPropagation(); promptRenameGroup(groupName); };
 
-                div.appendChild(titleSpan);
-                div.appendChild(delSpan);
-                list.appendChild(div);
+                const btnDelete = document.createElement('span');
+                btnDelete.innerText = '🗑️';
+                btnDelete.title = 'Delete Group';
+                btnDelete.onclick = (e) => { e.stopPropagation(); promptDeleteGroup(groupName); };
+
+                actions.appendChild(btnAdd);
+                actions.appendChild(btnRename);
+                actions.appendChild(btnDelete);
+                header.appendChild(titleSpan);
+                header.appendChild(actions);
+                groupDiv.appendChild(header);
+
+                // Presets List inside Group
+                const presetListDiv = document.createElement('div');
+                presetListDiv.className = 'group-presets';
+
+                for (const [presetName, paths] of Object.entries(presets || {})) {
+                    const pDiv = document.createElement('div');
+                    pDiv.className = 'preset-item' + (activeGroupName === groupName && activePresetName === presetName ? ' active' : '');
+                    
+                    // Make Draggable
+                    pDiv.draggable = true;
+                    pDiv.ondragstart = (e) => {
+                        e.dataTransfer.setData('text/plain', JSON.stringify({group: groupName, preset: presetName}));
+                    };
+                    
+                    pDiv.onclick = () => {
+                        activeGroupName = groupName;
+                        activePresetName = presetName;
+                        applyPreset(paths);
+                        renderPresets(); 
+                    };
+                    
+                    const pTitleSpan = document.createElement('span');
+                    pTitleSpan.innerText = presetName;
+                    
+                    const pDelSpan = document.createElement('span');
+                    pDelSpan.className = 'preset-delete';
+                    pDelSpan.innerText = '×';
+                    pDelSpan.onclick = async (e) => {
+                        e.stopPropagation(); 
+                        delete currentPresets[groupName][presetName];
+                        if (activeGroupName === groupName && activePresetName === presetName) {
+                            activeGroupName = null;
+                            activePresetName = null;
+                        }
+                        await savePresetsToServer();
+                        renderPresets();
+                    };
+
+                    pDiv.appendChild(pTitleSpan);
+                    pDiv.appendChild(pDelSpan);
+                    presetListDiv.appendChild(pDiv);
+                }
+                groupDiv.appendChild(presetListDiv);
+                list.appendChild(groupDiv);
             }
         }
 
-        async function savePreset() {
-            const input = document.getElementById('preset-name');
-            const name = input.value.trim();
-            if (!name) return alert("Enter a preset name");
-
-            const selected = Array.from(document.querySelectorAll('input[type="checkbox"]:checked[data-isdir="false"]'))
-                                .map(cb => cb.dataset.path);
-            
-            if (selected.length === 0) return alert("Select some files first!");
-
-            currentPresets[name] = selected;
-            activePreset = name; 
-            await savePresetsToServer();
-            
-            input.value = '';
-            renderPresets();
+        // --- Prompt Dialogs ---
+        async function promptCreateGroup() {
+            const name = prompt("Enter new group name:");
+            if (name && name.trim() !== '') {
+                if (!currentPresets[name]) {
+                    currentPresets[name] = {};
+                    await savePresetsToServer();
+                    renderPresets();
+                } else {
+                    alert("A group with that name already exists.");
+                }
+            }
         }
 
+        async function promptRenameGroup(oldName) {
+            const newName = prompt("Enter new name for group:", oldName);
+            if (newName && newName.trim() !== '' && newName !== oldName) {
+                if (currentPresets[newName]) {
+                    alert("A group with that name already exists.");
+                    return;
+                }
+                // Transfer presets to new group key
+                currentPresets[newName] = currentPresets[oldName];
+                delete currentPresets[oldName];
+                
+                // Update active state if necessary
+                if (activeGroupName === oldName) activeGroupName = newName;
+                
+                await savePresetsToServer();
+                renderPresets();
+            }
+        }
+
+        async function promptDeleteGroup(name) {
+            if (confirm(`Are you sure you want to delete the group "${name}" and all its presets?`)) {
+                delete currentPresets[name];
+                if (activeGroupName === name) {
+                    activeGroupName = null;
+                    activePresetName = null;
+                }
+                await savePresetsToServer();
+                renderPresets();
+            }
+        }
+
+        async function promptCreatePreset(groupName) {
+            const presetName = prompt(`Enter preset name to add to ${groupName}:`);
+            if (presetName && presetName.trim() !== '') {
+                const selected = Array.from(document.querySelectorAll('input[type="checkbox"]:checked[data-isdir="false"]'))
+                                    .map(cb => cb.dataset.path);
+                
+                if (selected.length === 0) {
+                    if(!confirm("No files are currently selected. Create empty preset?")) return;
+                }
+
+                currentPresets[groupName][presetName] = selected;
+                activeGroupName = groupName;
+                activePresetName = presetName; 
+                await savePresetsToServer();
+                renderPresets();
+            }
+        }
+
+        // --- Apply Preset ---
         function applyPreset(paths) {
             isApplyingPreset = true; 
             
-            document.querySelectorAll('#tree-container ul ul').forEach(ul => {
-                ul.classList.add('hidden');
-            });
-            document.querySelectorAll('#tree-container .toggle-icon').forEach(icon => {
-                icon.innerText = '▶';
-            });
+            // Collapse all folders and reset carets
+            document.querySelectorAll('#tree-container ul ul').forEach(ul => ul.classList.add('hidden'));
+            document.querySelectorAll('#tree-container .toggle-icon').forEach(icon => icon.innerText = '▶');
             
             document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
             
@@ -511,9 +556,7 @@
                     cb.checked = true;
                     
                     const liNode = cb.closest('li');
-                    if (liNode) {
-                        handleCheck(cb, liNode);
-                    }
+                    if (liNode) handleCheck(cb, liNode);
                     
                     let currentLi = cb.closest('li');
                     while (currentLi) {
@@ -532,9 +575,12 @@
             });
             
             isApplyingPreset = false;
+            // The final updateSelectedView call will not trigger an auto-save because we guard it
+            // carefully inside the function by checking if we actually changed something.
             updateSelectedView();
         }
 
+        // --- Context Generation ---
         async function generateContext() {
             const btn = document.getElementById('generate-btn');
             const status = document.getElementById('status-message');
@@ -561,12 +607,7 @@
                 if (!res.ok) throw new Error(await res.text());
 
                 status.innerText = "Success! Files generated.";
-                
-                setTimeout(() => {
-                    if (status.innerText.startsWith("Success")) {
-                        status.innerText = "";
-                    }
-                }, 3000);
+                setTimeout(() => { if (status.innerText.startsWith("Success")) status.innerText = ""; }, 3000);
             } catch (err) {
                 alert("Error generating context: " + err.message);
             } finally {

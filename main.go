@@ -55,23 +55,50 @@ func main() {
 		json.NewEncoder(w).Encode(tree)
 	})
 
-	// 3. API Endpoint: Manage Presets
+	// 3. API Endpoint: Manage Presets (Phase 1: Nested Groups & Migration)
 	mux.HandleFunc("/api/presets", func(w http.ResponseWriter, r *http.Request) {
 		presetFile := filepath.Join(cwd, ".context-presets.yaml")
 
 		if r.Method == http.MethodGet {
-			presets := make(map[string][]string)
+			// New nested structure: Group -> Preset -> Paths
+			presets := make(map[string]map[string][]string)
 			data, err := os.ReadFile(presetFile)
-			if err == nil {
-				_ = yaml.Unmarshal(data, &presets)
+
+			if err == nil && len(data) > 0 {
+				// Try unmarshaling into the new nested format first
+				err = yaml.Unmarshal(data, &presets)
+
+				// If it fails, it's likely the old flat format. Attempt graceful migration.
+				if err != nil {
+					oldFormat := make(map[string][]string)
+					if oldErr := yaml.Unmarshal(data, &oldFormat); oldErr == nil {
+						fmt.Println("Migrating old flat presets to new grouped format...")
+
+						// Wrap old presets in a default "Uncategorized" group
+						presets = make(map[string]map[string][]string)
+						if len(oldFormat) > 0 {
+							presets["Uncategorized"] = oldFormat
+						}
+
+						// Overwrite the file immediately with the new structure
+						if migratedData, marshalErr := yaml.Marshal(presets); marshalErr == nil {
+							_ = os.WriteFile(presetFile, migratedData, 0644)
+						}
+					} else {
+						// If both fail, print a warning but return the empty map to avoid crashing
+						fmt.Printf("Warning: Failed to parse %s\n", presetFile)
+					}
+				}
 			}
+
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(presets)
 			return
 		}
 
 		if r.Method == http.MethodPost {
-			var presets map[string][]string
+			// Expecting the nested structure from the frontend
+			var presets map[string]map[string][]string
 			if err := json.NewDecoder(r.Body).Decode(&presets); err != nil {
 				http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 				return
@@ -95,7 +122,7 @@ func main() {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	})
 
-	// 4. API Endpoint: Generate the context file (NO SHUTDOWN)
+	// 4. API Endpoint: Generate the context file
 	mux.HandleFunc("/api/generate", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -110,14 +137,12 @@ func main() {
 			return
 		}
 
-		// Generate the main context text file
 		err := generateContextFile(cwd, req.SelectedPaths)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Context generation failed: %v", err), http.StatusInternalServerError)
 			return
 		}
 
-		// Re-build the tree to ensure we have the latest state, then write the tree file
 		treeRoot, err := buildDirectoryTree(cwd)
 		if err == nil {
 			if treeErr := generateTreeFile(cwd, treeRoot); treeErr != nil {
@@ -146,7 +171,6 @@ func main() {
 	fmt.Println("Press Ctrl+C in this terminal to stop the server.")
 	_ = browser.OpenURL("http://127.0.0.1:8080")
 
-	// Wait for OS interrupt signal (Ctrl+C)
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	<-sigCh
