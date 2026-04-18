@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -18,6 +19,9 @@ import (
 	ignore "github.com/sabhiram/go-gitignore"
 	"gopkg.in/yaml.v3"
 )
+
+// Add a global mutex to handle concurrent preset writes/reads safely
+var presetMutex sync.Mutex
 
 //go:embed index.html
 var indexHTML []byte
@@ -60,32 +64,31 @@ func main() {
 		presetFile := filepath.Join(cwd, ".context-presets.yaml")
 
 		if r.Method == http.MethodGet {
-			// New nested structure: Group -> Preset -> Paths
 			presets := make(map[string]map[string][]string)
+
+			// Lock for safe reading
+			presetMutex.Lock()
 			data, err := os.ReadFile(presetFile)
+			presetMutex.Unlock()
 
 			if err == nil && len(data) > 0 {
-				// Try unmarshaling into the new nested format first
 				err = yaml.Unmarshal(data, &presets)
-
-				// If it fails, it's likely the old flat format. Attempt graceful migration.
 				if err != nil {
 					oldFormat := make(map[string][]string)
 					if oldErr := yaml.Unmarshal(data, &oldFormat); oldErr == nil {
 						fmt.Println("Migrating old flat presets to new grouped format...")
-
-						// Wrap old presets in a default "Uncategorized" group
 						presets = make(map[string]map[string][]string)
 						if len(oldFormat) > 0 {
 							presets["Uncategorized"] = oldFormat
 						}
 
-						// Overwrite the file immediately with the new structure
 						if migratedData, marshalErr := yaml.Marshal(presets); marshalErr == nil {
+							// Lock for safe migration write
+							presetMutex.Lock()
 							_ = os.WriteFile(presetFile, migratedData, 0644)
+							presetMutex.Unlock()
 						}
 					} else {
-						// If both fail, print a warning but return the empty map to avoid crashing
 						fmt.Printf("Warning: Failed to parse %s\n", presetFile)
 					}
 				}
@@ -97,7 +100,6 @@ func main() {
 		}
 
 		if r.Method == http.MethodPost {
-			// Expecting the nested structure from the frontend
 			var presets map[string]map[string][]string
 			if err := json.NewDecoder(r.Body).Decode(&presets); err != nil {
 				http.Error(w, "Invalid JSON body", http.StatusBadRequest)
@@ -110,7 +112,12 @@ func main() {
 				return
 			}
 
-			if err := os.WriteFile(presetFile, yamlData, 0644); err != nil {
+			// Lock for safe writing
+			presetMutex.Lock()
+			err = os.WriteFile(presetFile, yamlData, 0644)
+			presetMutex.Unlock()
+
+			if err != nil {
 				http.Error(w, "Failed to write preset file", http.StatusInternalServerError)
 				return
 			}
@@ -261,9 +268,9 @@ func generateContextFile(cwd string, selectedPaths []string) error {
 			continue
 		}
 
-		fmt.Fprintf(outFile, "## %s\n", relPath)
+		fmt.Fprintf(outFile, "##### FILE: %s\n", relPath)
 		outFile.Write(content)
-		outFile.WriteString("\n")
+		fmt.Fprintf(outFile, "##### END OF FILE: %s\n", relPath)
 	}
 
 	return nil

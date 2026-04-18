@@ -116,7 +116,11 @@
 
     <div class="main-content">
         <div class="top-bar">
-            <input type="text" class="search-bar" id="search-input" placeholder="Search files (e.g. processor.go)..." onkeyup="filterTree()">
+            <div style="display: flex; gap: 10px; flex-grow: 1; max-width: 450px;">
+                <input type="text" class="search-bar" id="search-input" 
+                placeholder="Search files (e.g. processor.go)..." onkeyup="filterTree()" style="max-width: 100%; flex-grow: 1;">
+                <button class="icon-btn" onclick="refreshTree()" title="Refresh File Tree" style="padding: 0 5px;">🔄</button>
+            </div>
             <span id="auto-save-indicator"></span>
         </div>
         <div class="tree-container" id="tree-container">
@@ -125,7 +129,12 @@
     </div>
 
     <div class="right-sidebar">
-        <div class="sidebar-header">Selected Files (<span id="selected-count">0</span>)</div>
+        <div class="sidebar-header" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+            <div style="width: 100%; display: flex; justify-content: space-between;">
+                <span>Selected Files (<span id="selected-count">0</span>)</span>
+            </div>
+            <div id="active-preset-title" style="font-size: 10px; color: #4daafc; font-weight: normal; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+        </div>
         <div class="selected-list" id="selected-files-list">
             <div style="padding: 10px; color: #777; font-size: 13px; text-align: center;">No files selected</div>
         </div>
@@ -164,6 +173,63 @@
             } catch (err) {
                 document.getElementById('tree-container').innerText = 'Failed to load project tree.';
                 console.error(err);
+            }
+        }
+
+        // --- Refresh File Tree & Preserve State ---
+        async function refreshTree() {
+            // 1. Snapshot current selection (leaf nodes only)
+            const selectedFiles = Array.from(document.querySelectorAll('input[type="checkbox"]:checked[data-isdir="false"]'))
+                                       .map(cb => cb.dataset.path);
+            
+            // 2. Temporarily show a loading state
+            const container = document.getElementById('tree-container');
+            container.innerHTML = '<div style="padding: 20px; color: #888;">Refreshing project files...</div>';
+
+            try {
+                // 3. Fetch the newly generated tree from the Go backend
+                const response = await fetch('/api/tree');
+                fileData = await response.json();
+                
+                // 4. Render the fresh tree structure
+                container.innerHTML = ''; 
+                const rootUl = document.createElement('ul');
+                rootUl.style.paddingLeft = '0';
+                if (fileData.children) {
+                    fileData.children.forEach(child => rootUl.appendChild(createTreeNode(child)));
+                }
+                container.appendChild(rootUl);
+                
+                // 5. Restore the checked state and expand necessary parent folders
+                selectedFiles.forEach(path => {
+                    const cb = document.querySelector(`input[data-path="${path}"]`);
+                    if (cb) {
+                        cb.checked = true;
+                        
+                        // Walk up the DOM tree to expand hidden parent folders
+                        let currentLi = cb.closest('li');
+                        while (currentLi) {
+                            const parentUl = currentLi.parentElement;
+                            if (parentUl && parentUl.classList.contains('hidden')) {
+                                parentUl.classList.remove('hidden');
+                                const parentLi = parentUl.closest('li');
+                                if (parentLi) {
+                                    const toggle = parentLi.querySelector('.toggle-icon');
+                                    if (toggle) toggle.innerText = '▼';
+                                }
+                            }
+                            currentLi = parentUl ? parentUl.closest('li') : null;
+                        }
+                    }
+                });
+
+                // 6. Sync right sidebar and re-apply active search filter
+                updateSelectedView();
+                filterTree();
+
+            } catch (err) {
+                container.innerHTML = '<div style="padding: 20px; color: #f48771;">Failed to refresh project tree.</div>';
+                console.error("Refresh failed:", err);
             }
         }
 
@@ -216,14 +282,28 @@
             return li;
         }
 
+        // --- Helper to update the UI title ---
+        function updateActivePresetTitle() {
+            const titleEl = document.getElementById('active-preset-title');
+            if (activeGroupName && activePresetName) {
+                titleEl.innerText = `Editing: ${activeGroupName} / ${activePresetName}`;
+                titleEl.title = `${activeGroupName} / ${activePresetName}`;
+            } else {
+                titleEl.innerText = '';
+                titleEl.title = '';
+            }
+        }
+
         // --- Checkbox & Selection Logic ---
         function handleCheck(checkbox, liNode) {
-            // Note: We no longer clear the active preset! If they check a box while
-            // a preset is active, we just update the DOM and let auto-save catch it.
             const isChecked = checkbox.checked;
             const childCheckboxes = liNode.querySelectorAll('input[type="checkbox"]');
             childCheckboxes.forEach(cb => cb.checked = isChecked);
-            updateSelectedView();
+            
+            // FIX: Prevent DOM thrashing by NOT updating the view repeatedly during a preset load.
+            if (!isApplyingPreset) {
+                updateSelectedView();
+            }
         }
 
         function updateSelectedView() {
@@ -325,8 +405,25 @@
                 await savePresetsToServer();
                 indicator.innerText = "Saved";
                 setTimeout(() => { if(indicator.innerText === "Saved") indicator.innerText = ""; }, 2000);
+                autoSaveTimer = null;
             }, 500); // 500ms debounce
         }
+
+        // FIX: Ensure pending saves flush to disk before generation or window close
+        function flushPendingSaves() {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = null;
+                // Using sendBeacon for reliable delivery on window unload, fallback to fetch
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon('/api/presets', JSON.stringify(currentPresets));
+                } else {
+                    savePresetsToServer(); 
+                }
+            }
+        }
+
+        window.addEventListener('beforeunload', flushPendingSaves);
 
         async function savePresetsToServer() {
             try {
@@ -372,6 +469,7 @@
                     // Keep active state synced if the moved preset was currently open
                     if (activeGroupName === sourceGroup && activePresetName === presetName) {
                         activeGroupName = targetGroupName;
+                        updateActivePresetTitle();
                     }
 
                     await savePresetsToServer();
@@ -382,6 +480,7 @@
             }
         }
 
+        // --- Rendering & Group Actions ---
         // --- Rendering & Group Actions ---
         function renderPresets() {
             const list = document.getElementById('preset-list');
@@ -447,7 +546,9 @@
                     pDiv.onclick = () => {
                         activeGroupName = groupName;
                         activePresetName = presetName;
-                        applyPreset(paths);
+                        updateActivePresetTitle();
+                        // FIX: Fetch the fresh array from state, not the closed-over 'paths' variable
+                        applyPreset(currentPresets[groupName][presetName]);
                         renderPresets(); 
                     };
                     
@@ -463,6 +564,7 @@
                         if (activeGroupName === groupName && activePresetName === presetName) {
                             activeGroupName = null;
                             activePresetName = null;
+                            updateActivePresetTitle();
                         }
                         await savePresetsToServer();
                         renderPresets();
@@ -503,7 +605,10 @@
                 delete currentPresets[oldName];
                 
                 // Update active state if necessary
-                if (activeGroupName === oldName) activeGroupName = newName;
+                if (activeGroupName === oldName) {
+                    activeGroupName = newName;
+                    updateActivePresetTitle();
+                }
                 
                 await savePresetsToServer();
                 renderPresets();
@@ -516,6 +621,7 @@
                 if (activeGroupName === name) {
                     activeGroupName = null;
                     activePresetName = null;
+                    updateActivePresetTitle();
                 }
                 await savePresetsToServer();
                 renderPresets();
@@ -535,6 +641,7 @@
                 currentPresets[groupName][presetName] = selected;
                 activeGroupName = groupName;
                 activePresetName = presetName; 
+                updateActivePresetTitle();
                 await savePresetsToServer();
                 renderPresets();
             }
@@ -582,6 +689,8 @@
 
         // --- Context Generation ---
         async function generateContext() {
+            flushPendingSaves(); // Ensure state is saved immediately before generating
+            
             const btn = document.getElementById('generate-btn');
             const status = document.getElementById('status-message');
             
